@@ -69,6 +69,22 @@ pwsh ./build.ps1                      # 打包
 
 目录说明见 [AGENTS.md](./AGENTS.md)。
 
+## 版本与发布
+
+插件包由 GitHub Actions 自动构建，**不用手动打包**。
+
+- 推到 `main`：跑校验 + 单测 + 打包，产物作为 Actions artifact（保留 90 天）
+- 打 tag `vX.Y.Z`：额外做版本一致性检查、抽取 `CHANGELOG.md` 里对应段落的正文，
+  自动创建 GitHub Release 并把 `market_data.zip` 挂上去
+
+发版流程：
+
+1. 改 `plugin.yaml` 的 `version`
+2. 在 `CHANGELOG.md` 里加一段 `## [x.y.z] - 日期`，写清楚改了什么
+3. `git tag vX.Y.Z && git push origin vX.Y.Z`
+
+tag 和 `plugin.yaml` 版本不一致、或 CHANGELOG 缺段落时，流程会直接失败，不会发出一个没有说明的版本。
+
 ## 免责声明
 
 本项目仅用于个人学习与研究，不构成任何投资建议。数据来自第三方公开接口，准确性、完整性与实时性由上游决定。
