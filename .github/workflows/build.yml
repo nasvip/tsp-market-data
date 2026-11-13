@@ -1,0 +1,69 @@
+name: build-plugin
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      - name: 准备 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 安装依赖（仅校验与单测需要）
+        run: pip install --quiet pyyaml polars
+
+      - name: 清单校验
+        run: python scripts/validate_manifest.py
+
+      - name: 单测
+        run: python scripts/run_tests.py
+
+      - name: 版本一致性（tag 必须与 plugin.yaml 一致）
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          V=$(python -c "import yaml;print(yaml.safe_load(open('plugin.yaml'))['version'])")
+          T=${GITHUB_REF#refs/tags/v}
+          echo "plugin.yaml=$V  tag=v$T"
+          if [ "$V" != "$T" ]; then
+            echo "::error::tag v$T 与 plugin.yaml 的版本 $V 不一致，请先把版本号改成 $T 再打 tag"
+            exit 1
+          fi
+
+      - name: 打包
+        run: |
+          mkdir -p dist
+          zip -j dist/market_data.zip \
+            plugin.yaml provider.py quote_client.py finance_client.py finance_mapper.py README.md
+          ls -l dist/
+          unzip -l dist/market_data.zip
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: market_data-plugin
+          path: dist/market_data.zip
+          if-no-files-found: error
+
+      - name: 提取 CHANGELOG 段
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: python scripts/extract_notes.py "${GITHUB_REF#refs/tags/v}"
+
+      - name: 发布 Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          files: dist/market_data.zip
+          fail_on_unmatched_files: true
