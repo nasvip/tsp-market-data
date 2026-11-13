@@ -1,0 +1,19 @@
+name: market_data
+version: 0.1.0
+plugin_api_version: 1
+display_name: 行情与财务（东财+腾讯+新浪）
+author: Builder
+runtime: none
+entry: provider:Provider
+requires_app: '>=0.3.24'
+requires_python: '>=3.11'
+platforms: [any]
+datasets: [depth5, minute, full_minute, financial]
+requires: []
+description: "一个插件接管四项：五档盘口、分钟K、全量分钟（腾讯+新浪）与财务五表（东方财富），全部为公开接口，无需 API Key。分钟历史约 8 个交易日，财务覆盖一般企业/银行/证券/保险四套报表模板。"
+usage_notes:
+  - "五档盘口：腾讯批量接口一次 400 只，缺失或失败时自动切新浪补拉（新浪盘口量以股返回，已换算成手）。"
+  - "分钟K：新浪 1 分钟接口，单只单次最多 1900 根（上游上限 1970），约 8 个交易日；声明 minute_history_days=7，面板默认 5 天窗口可完整覆盖。"
+  - "全量分钟：腾讯当日 1 分钟K（真 OHLC），逐只并发，全市场一轮约 1.5 分钟；腾讯不可用时回退新浪当日分钟。"
+  - "财务数据：东方财富 F10，按报告期批量拉全市场，首次回溯 12 个季度；银行/证券/保险自动切换对应报表模板，公告日期完整。"
+  - "所有上游均为非官方公开接口，可能限流或改字段；插件自带限速、重试与兜底。"
