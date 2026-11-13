@@ -319,7 +319,8 @@ class Provider:
         code = (symbols or ["600519.SH"])[0]
         try:
             if dataset == "depth5":
-                data = fetch_depth([code])
+                # 走带兜底的完整路径（收盘后腾讯会清零买卖盘，靠新浪补）
+                data = self.get_depth_batch([code])
                 rows = len(data)
                 preview = [{code: data.get(code)}] if data else []
                 columns = ["bid_prices", "bid_volumes", "ask_prices", "ask_volumes", "timestamp"]
